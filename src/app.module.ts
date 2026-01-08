@@ -14,21 +14,35 @@ import { CorreiosModule } from './correios/correios.module';
 
 @Module({
   imports: [
+    // Configuração para ler variáveis de ambiente
     ConfigModule.forRoot({
       envFilePath: ['.env.development.local'],
+      isGlobal: true, // Recomendado para não precisar importar ConfigModule em outros lugares
     }),
+    
+    // Configuração do Banco de Dados (Neon + Vercel)
     TypeOrmModule.forRoot({
       type: 'postgres',
-      database: process.env.DB_DATABASE,
-      host: process.env.DB_HOST,
-      password: process.env.DB_PASSWORD,
-      port: Number(process.env.DB_PORT),
-      username: process.env.DB_USERNAME,
+      // Aqui usamos a URL completa que você copiou do Neon
+      url: process.env.DATABASE_URL, 
+      
+      // Configuração de SSL Obrigatória para o Neon
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      
+      // Carrega as entidades automaticamente
       entities: [`${__dirname}/**/*.entity{.js,.ts}`],
-      migrations: [`${__dirname}/migration/{.ts,*.js}`],
-      migrationsRun: true,
-      synchronize: false,
+      
+      // ATENÇÃO: Para o primeiro deploy na Vercel, recomendo synchronize: true
+      // Isso cria as tabelas automaticamente sem precisar rodar migrations manualmente.
+      // Depois que estiver tudo estável, você pode voltar para migrations.
+      synchronize: true, 
+      
+      // Desativei migrationsRun temporariamente para evitar erros no deploy serverless
+      migrationsRun: false, 
     }),
+    
     UserModule,
     StateModule,
     CityModule,
